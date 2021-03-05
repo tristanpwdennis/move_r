@@ -1,0 +1,123 @@
+// Keywords: continuous space, continuous spatial landscape, reprising boundaries
+
+initialize() {
+	initializeSLiMModelType("nonWF");
+	defineConstant("K", 300); //carrying capacity
+	defineConstant("S", 0.1); //
+	initializeSLiMOptions(dimensionality="xy");  
+	initializeMutationRate(1e-7);
+	initializeMutationType("m1", 0.5, "f", 0.0);
+	initializeGenomicElementType("g1", m1, 1.0);
+	initializeGenomicElement(g1, 0, 99999);
+	initializeRecombinationRate(1e-8);
+	m1.convertToSubstitution = T;  
+	
+	// spatial competition
+	initializeInteractionType(1, "xy", reciprocal=T, maxDistance=S*3);
+	i1.setInteractionFunction("n", 1.0, S);
+
+	// spatial mate choice
+	initializeInteractionType(2, "xy", reciprocal=T, maxDistance=0.1);
+}
+
+//reproduction
+reproduction() {
+	mate = i2.nearestNeighbors(individual, 3);
+	if (!mate.size())
+		return;
+	mate = sample(mate, 1);
+	
+	for (i in seqLen(rpois(1, 0.1)))
+	{
+		pos = individual.spatialPosition + rnorm(2, 0, 0.1);
+		offspring = subpop.addCrossed(individual, mate);
+		}
+}
+
+1 early() {
+	sim.addSubpop("p1", 200);
+	p1.individuals.setSpatialPosition(p1.pointUniform(200));
+	
+	 a = 0.5; // marginal habitat
+    g = 1.0; // good habitat
+    v = 2.0; // very good habitat
+    r = 0.4; // ridge
+    x = 0.1; // bad habitat
+   
+//bind values into matrix
+smat=rbind(	c(x, x, x, x, x, x, x, x, x), 
+				c(x, g, g, g, r, r, a, a, x), 
+				c(x, v, v, g, r, r, g, g, x),
+				c(x, v, v, g, r, r, g, g, x),
+				c(x, g, g, g, r, r, a, a, x),
+				c(x, x, x, x, r, r, x, x, x));
+ 
+ defineConstant("mapValues", smat);	
+	
+	
+p1.defineSpatialMap("h", "xy", mapValues, interpolate=T, valueRange=c(0.0, 1.0), colors=c("black", "white"));
+
+    // header info
+    cat("gen" + " " + "stage" + " ");
+    cat("pop_size" + " " + "births" + " ");
+    cat("age" + " " + "density" + " ");
+    catn("neighbor" + " " + "harm_neigh" + " " + "num_off" + " " + "time");
+
+}
+
+
+1: early() {
+	i1.evaluate();
+	inds = sim.subpopulations.individuals;
+	competition = i1.totalOfNeighborStrengths(inds);
+competition = (competition + 1) / (2 * PI * S^2);
+K_local = K * p1.spatialMapValue("h", inds.spatialPosition);
+inds.fitnessScaling = K_local / competition;
+
+//here I define periodic disasters
+//i can localise them by changing the epicenter
+//i can also make the epicenter encompass the whole map
+ if (runif(1) < 0.9) {
+epicenter = c(0.5, 0.6);
+d = i1.distanceToPoint(inds, epicenter);
+affected = inds[d < 0.2];
+affected.color = "cornflowerblue";
+affected.fitnessScaling = 0.1;  
+}	
+}
+
+1: late() {
+i2.evaluate();
+}
+
+
+modifyChild() {
+// Absorbing boundary conditions
+pos = parent1.spatialPosition + rnorm(2, 0, 0.1);
+if (!p1.pointInBounds(pos))
+return F;
+	child.setSpatialPosition(pos);
+	
+	return T;
+}
+
+//let's fuck shit up by making the ridge higher
+1000 early(){
+	 a = 0.5; // marginal habitat
+    g = 1.0; // good habitat
+    v = 2.0; // very good habitat
+    r = 0.4; // ridge
+    x = 0.1; // bad habitat
+//bind values into matrix
+smat=rbind(	c(x, x, x, x, x, x, x, x, x), 
+				c(x, g, g, g, x, x, a, a, x), 
+				c(x, v, v, g, x, x, g, g, x),
+				c(x, v, v, g, x, x, g, g, x),
+				c(x, g, g, g, x, x, a, a, x),
+				c(x, x, x, x, x, x, x, x, x));
+ 
+ defineConstant("newmap", smat);	
+p1.defineSpatialMap("h", "xy", newmap, interpolate=T, valueRange=c(0.0, 1.0), colors=c("black", "white"));
+}
+
+2000 late() { sim.outputFixedMutations(); }
