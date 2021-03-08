@@ -3,6 +3,7 @@
 #parsing treesequence results from SliM spatial simulation
 #Tristan Dennis 05.02.21
 #tristanpwdennis@gmail.com
+Liberally adapted from the tskit spatial vignette at https://pyslim.readthedocs.io/en/stable/vignette_space.html#
 """
 import pyslim 
 import tskit 
