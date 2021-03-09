@@ -73,8 +73,7 @@ for a, group in enumerate(groups):
         row = [ind, group]
         group_memb.append(row)
         
-group_memb = pd.DataFrame(group_memb)
-group_memb.columns = ['ind', 'group']
+group_memb = pd.DataFrame(group_memb, columns = ['ind', 'group'])
 
 #ok now let's concatenate the np arrays and coerce to dataframe for old and new
 now = pd.DataFrame(np.column_stack((locs, alive)))
@@ -125,5 +124,13 @@ for (i, j), x in zip(pairs, geog_dist):
     if i == j:
         assert(x == 0)
         
-for (a, b, c) in zip(pairs, geog_dist)   
+geo= []
+for (a, b), c in zip(pairs, geog_dist):   
+    row = [a,b,c]
+    geo.append(row)
+geo = pd.DataFrame(geo, columns = ['ind1', '[ind2', ['dist']])
+
+
+
+
 
