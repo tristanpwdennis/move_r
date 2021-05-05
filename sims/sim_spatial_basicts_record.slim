@@ -11,10 +11,10 @@ initialize() {
    initializeRecombinationRate(1e-8);    
 
    defineConstant("LAMBDA", 2.0); // birth rate
-   defineConstant("K", 10);      // carrying capacity per unit area
+   defineConstant("K", 7);      // carrying capacity per unit area
    defineConstant("W", 10);      // width and height of the area
    defineConstant("MU", 0.5);     // death rate
-   defineConstant("SIGMA", 0.35);  // interaction distance
+   defineConstant("SIGMA", 0.3);  // interaction distance (dispersal)
    
    // spatial interaction for local competition
    initializeInteractionType("i1", "xy", reciprocal=T,maxDistance = 10 * SIGMA);
@@ -46,7 +46,7 @@ reproduction() {
     g = 1.0; // good habitat
     v = 2.0; // very good habitat
     r = 0.4; // ridge
-    x = 0.2; // bad habitat
+    x = 0.1; // bad habitat
 //bind values into matrix
 	smat=rbind(	c(x, x, x, x, x, x, x, x, x, x), 
 					c(x, g, g, g, r, r, r, a, a, x), 
@@ -79,6 +79,9 @@ cat(sim.generation + ": " + size(inds));
 catn(" (" + max(inds.age) + ", " + mean(inds.age) + ")");
 }
 
+999 late() {
+   sim.treeSeqRememberIndividuals(p1.individuals);
+}
 1000 late() {
    sim.treeSeqRememberIndividuals(p1.individuals);
 }
@@ -89,7 +92,7 @@ catn(" (" + max(inds.age) + ", " + mean(inds.age) + ")");
     g = 1.0; // good habitat
     v = 2.0; // very good habitat
     r = 0.4; // ridge
-    x = 0.2; // bad habitat
+    x = 0.1; // bad habitat
 //bind values into matrix
 	smat=rbind(	c(x, x, x, x, x, x, x, x, x, x), 
 					c(x, g, g, g, x, x, x, a, a, x), 
@@ -100,9 +103,11 @@ catn(" (" + max(inds.age) + ", " + mean(inds.age) + ")");
 defineConstant("newmap", smat);	
 p1.defineSpatialMap("h", "xy", newmap, interpolate=T, valueRange=c(0.0, 1.0), colors=c("black", "white"));
 }
-
+1029 late() {
+   sim.treeSeqRememberIndividuals(p1.individuals);
+}
 1030 late() {
-   sim.treeSeqOutput("/Users/tristanpwdennis/OneDrive - University of Glasgow/MOVE/manuscripts/move_review_2021/move_r/spatial_sim.trees");
+   sim.treeSeqOutput("/Users/tristanpwdennis/OneDrive - University of Glasgow/MOVE/manuscripts/move_review_2021/move_r/orogenyat30.trees");
    catn("Done.");
    sim.simulationFinished();
 }

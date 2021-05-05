@@ -1,0 +1,116 @@
+initialize() {
+   setSeed(23);
+   initializeSLiMModelType("nonWF");
+   initializeSLiMOptions(dimensionality="xy");
+   initializeTreeSeq();
+   keepPedigrees=T ;
+	defineConstant("L", c(0.0, 0.8, 1));  
+   initializeMutationRate(0.0);
+   initializeMutationType("m1", 0.5, "f", 0.0);
+   initializeGenomicElementType("g1", m1, 1.0);
+   initializeGenomicElement(g1, 0, 1e8-1);
+   initializeRecombinationRate(1e-8);    
+
+   defineConstant("LAMBDA", 2.0); // birth rate
+   defineConstant("K", 2);      // carrying capacity per unit area
+   defineConstant("W", 20);      // width and height of the area
+   defineConstant("MU", 0.5);     // death rate
+   defineConstant("SIGMA", 0.4);  // interaction distance (dispersal)
+   
+   // spatial interaction for local competition
+   initializeInteractionType("i1", "xy", reciprocal=T,maxDistance = 10 * SIGMA);
+   i1.setInteractionFunction("n", 1.0/(2*PI*SIGMA^2), SIGMA);
+}
+
+reproduction() {
+   neighbor_density = i1.totalOfNeighborStrengths(individual);
+   num_offspring = rpois(1, LAMBDA / (1 + neighbor_density / K));
+   mate = i1.drawByStrength(individual, 1);  // single mating
+   if (size(mate) > 0) {
+       for (k in seqLen(num_offspring)) {
+           offspring = p1.addCrossed(individual, mate);
+           pos = individual.spatialPosition + rnorm(2, 0, SIGMA);
+           offspring.setSpatialPosition(p1.pointReflected(pos));
+       }
+   }
+}
+
+1 early() {
+   sim.addSubpop("p1", K * W * W); //add subpop based on size and carrying capacity
+   p1.setSpatialBounds(c(0.0, 0.0, W, W));
+   p1.individuals.age = rdunif(K * W * W, min=0, max=2);  //for some reason this doesn't work WHY WON'T YOU DIE
+   for (ind in p1.individuals) {
+       ind.setSpatialPosition(p1.pointUniform());
+   }
+//now we make our map
+	 a = 0.5; // marginal habitat
+    g = 1.0; // good habitat
+    v = 2.0; // very good habitat
+    r = 0.4; // ridge
+    x = 0.1; // bad habitat
+//bind values into matrix
+	smat=rbind(	c(x, x, x, x, x, x, x, x, x), 
+					c(x, g, g, g, a, a, a, a, x), 
+					c(x, v, v, g, a, a, g, g, x),
+					c(x, v, v, g, a, a, g, g, x),
+					c(x, v, v, g, a, a, g, g, x),
+					c(x, g, g, g, a, a, a, a, x),
+					c(x, x, x, x, x, x, x, x, x));
+ 
+	 defineConstant("mapValues", smat);	
+	p1.defineSpatialMap("h", "xy", mapValues, interpolate=T, valueRange=c(0.0, 1.0), colors=c("black", "white"));   
+    
+}
+
+early() { // survival probabilities
+   	i1.evaluate();
+	inds = sim.subpopulations.individuals;
+	competition = i1.totalOfNeighborStrengths(inds); //calculates spatial interaction strength between every individual
+	competition = (competition + 1) / (2 * PI * SIGMA^2); //competition is the total of neighbour strengths in twice the circle surrounding the ind (i think?)
+	K_local = K * p1.spatialMapValue("h", inds.spatialPosition); //takes local population density
+	inds.fitnessScaling = K_local / competition; //density-dependent selection
+}
+
+late() {
+   i1.evaluate();
+}
+
+late() {
+inds = p1.individuals;
+cat(sim.generation + ": " + size(inds));
+catn(" (" + max(inds.age) + ", " + mean(inds.age) + ")");
+}
+
+999 late() {
+   sim.treeSeqRememberIndividuals(p1.individuals);
+}
+1000 late() {
+   sim.treeSeqRememberIndividuals(p1.individuals);
+}
+//landscape change at gen 1000
+//let's fuck shit up by making the ridge impassable
+1001 early(){
+	 a = 0.5; // marginal habitat
+    g = 1.0; // good habitat
+    v = 2.0; // very good habitat
+    r = 0.4; // ridge
+    x = 0.1; // bad habitat
+//bind values into matrix
+	smat=rbind(	c(x, x, x, x, x, x, x, x, x), 
+					c(x, a, a, a, x, x, a, a, x), 
+					c(x, g, g, a, r, r, g, g, x),
+					c(x, g, g, a, r, r, g, g, x),
+					c(x, g, g, a, r, r, g, g, x),
+					c(x, a, a, a, x, x, a, a, x),
+					c(x, x, x, x, x, x, x, x, x));
+defineConstant("newmap", smat);	
+p1.defineSpatialMap("h", "xy", newmap, interpolate=T, valueRange=c(0.0, 1.0), colors=c("black", "white"));
+}
+1029 late() {
+   sim.treeSeqRememberIndividuals(p1.individuals);
+}
+1030 late() {
+   sim.treeSeqOutput("/Users/tristanpwdennis/OneDrive - University of Glasgow/MOVE/manuscripts/move_review_2021/move_r/onefocusat30.trees");
+   catn("Done.");
+   sim.simulationFinished();
+}
