@@ -12,6 +12,6 @@ Simulation implementing (crudely):
 * Changes in dispersal (σ)
 
 
-Simulations (in SLiM) are contained in *sims*
-R and Python Scripts for parsing the output and performing various analyses are contained in *bin*
-Treesequences (cool!) and other sim outputs are contained in sim_outputs
+- Simulations (in SLiM) are contained in *sims*
+- R and Python Scripts for parsing the output and performing various analyses are contained in *bin*
+- Treesequences (cool!) and other sim outputs are contained in sim_outputs
